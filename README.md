@@ -1,7 +1,7 @@
 Modeling Affect Intensity
 ==============================
 
-Modeling affect intensity expressed in tweets. Semeval task 2018. 
+Modeling affect intensity expressed in tweets. Semeval task 2018. Authors - Aarsh Patel & Lynn Samson
 
 Project Organization
 ------------
