@@ -1,6 +1,7 @@
 import abc
 
 class Model(object):
+    """ Represents an abstract base class """
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, X_train, y_train, X_test, y_test, optimization_parameters={}):
