@@ -18,7 +18,6 @@ def evaluate_model(model, evaluation_metric):
 	evaluation_score = model.evaluate(evaluation_metric)
 	return evaluation_score
 
-
 def get_labels(data):
 	""" Get the labels from the data """
 	labels = []
@@ -35,6 +34,7 @@ if __name__ == "__main__":
 	parser.add_argument("-f", "--features", help="the type of features to use for the model")
 	parser.add_argument("-me", "--metric", help="the metric to evaluate models")
 	parser.add_argument('-opt', "--optimize", help="whether or not to optimize the models")
+	parser.add_argument("-sv" "--save", help="save the model")
 
 	args = parser.parse_args()
 
@@ -43,6 +43,7 @@ if __name__ == "__main__":
 	print "Model: ", args.model
 	print "Features: ", args.features
 	print "Metric: ", args.metric
+	print "\n"
 
 	training_data = utils.load_data.load_training_data("./data/train")	
 
@@ -54,14 +55,10 @@ if __name__ == "__main__":
 
 	if args.features == "bow":
 		X_train, X_test =  utils.generate_features.generate_bow_features(X_train_samples, X_test_samples)
+	elif args.features == "tfidf":
+		X_train, X_test = utils.generate_features.generate_tfidf_features(X_train_samples, X_test_samples)
 	else:
 		X_train, X_test = None, None
-
-	print X_train.shape
-	print X_test.shape
-	
-	print y_train.shape
-	print y_test.shape	
 
 	optimization_parameters = {}	
 	model = load_model(args.model, X_train, y_train, X_test, y_test, optimization_parameters)
