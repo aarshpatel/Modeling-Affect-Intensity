@@ -61,6 +61,7 @@ if __name__ == "__main__":
     optimization_parameters = {}
     model = load_model(args.model, X_train, y_train, X_test, y_test, optimization_parameters)
     model.train()
+    print "score", model.score()
     for metric in args.metrics:
         eval_score = model.evaluate(metric)
         print "{0}: {1}".format(metric, eval_score)
