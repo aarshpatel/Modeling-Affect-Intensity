@@ -1,4 +1,3 @@
-import preprocessor as p
 import re
 import string
 from nltk.corpus import stopwords

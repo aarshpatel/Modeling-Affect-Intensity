@@ -1,5 +1,6 @@
 import abc
 
+
 class Model(object):
     """ Represents an abstract base class """
     __metaclass__ = abc.ABCMeta
@@ -14,7 +15,7 @@ class Model(object):
     @abc.abstractmethod
     def optimize(self):
         pass
-        
+
     @abc.abstractmethod
     def predict(self):
         pass
@@ -26,5 +27,3 @@ class Model(object):
     @abc.abstractmethod
     def save(self, filename):
         pass
-
-
