@@ -37,10 +37,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train_input = utils.load_data.load_training_data("data/train")
-    # dev_input = utils.load_data.load_training_data("data/dev")
+    dev_input = utils.load_data.load_training_data("data/dev")
 
     train_emotions, train_labels = get_emotions_and_labels(train_input)
-    # dev_emotions, dev_labels = get_emotions_and_labels(dev_input)
+    dev_emotions, dev_labels = get_emotions_and_labels(dev_input)
 
     # train_input.extend(dev_input)
     # train_labels.extend(dev_labels)
@@ -59,24 +59,21 @@ if __name__ == "__main__":
     }
 
     train_emotions = [emotion_to_feature[emotion] for emotion in train_emotions]
-
     train_emotions = np.asarray(train_emotions)
 
-    test_emotions = train_emotions
+    dev_emotions = [emotion_to_feature[emotion] for emotion in dev_emotions]
+    dev_emotions = np.asarray(dev_emotions)
 
-    print train_emotions.shape[0]
-
-    X_train = train_input
     y_train = train_labels
-    y_test = y_train
+    y_test = dev_labels
 
-    X_train_corpus = [" ".join(tweet) for tweet, emotion, score in X_train]
-    X_test_corpus = [" ".join(tweet) for tweet, emotion, score in X_train]
+    X_train_corpus = [" ".join(tweet) for tweet, emotion, score in train_input]
+    X_dev_corpus = [" ".join(tweet) for tweet, emotion, score in dev_input]
 
     if args.features == "bow":
-        X_train, X_test = utils.generate_features.generate_bow_features(X_train_corpus, X_test_corpus, train_emotions, test_emotions)
+        X_train, X_test = utils.generate_features.generate_bow_features(X_train_corpus, X_dev_corpus, train_emotions, dev_emotions)
     elif args.features == "tfidf":
-        X_train, X_test = utils.generate_features.generate_tfidf_features(X_train_corpus, X_test_corpus, train_emotions, test_emotions)
+        X_train, X_test = utils.generate_features.generate_tfidf_features(X_train_corpus, X_dev_corpus, train_emotions, dev_emotions)
     else:
         X_train, X_test = None, None
 
