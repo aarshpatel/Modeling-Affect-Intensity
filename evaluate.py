@@ -3,7 +3,6 @@ import argparse
 import imp
 import sys
 import os
-# sys.path.append('/Users/aarsh/Documents/Modeling-Affect-Intensity/utils')
 import utils
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -34,22 +33,21 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    train_input = utils.load_data.load_training_data("data/train")
-    dev_input = utils.load_data.load_training_data("data/dev")
+    training_data, testing_data = utils.load_data.load_training_testing_data("data/train")
 
-    train_labels = get_labels(train_input)
-    dev_labels = get_labels(dev_input)
 
-    train_input.extend(dev_input)
-    train_labels.extend(dev_labels)
+    train_labels = get_labels(training_data)
+    test_labels = get_labels(testing_data)
 
-    X_train, X_test, y_train, y_test = train_test_split(train_input, train_labels, test_size=0.2, random_state=10)
 
-    y_train = np.asarray(y_train)
-    y_test = np.asarray(y_test)
+    train_labels = np.asarray(train_labels)
+    test_labels = np.asarray(test_labels)
 
-    X_train_corpus = [" ".join(tweet) for tweet, emotion, score in X_train]
-    X_test_corpus = [" ".join(tweet) for tweet, emotion, score in X_test]
+    print train_labels.shape
+    print test_labels.shape
+
+    train_tweets = [(" ".join(tweet), emotion) for tweet, emotion, score in training_data]
+    test_tweets = [(" ".join(tweet), emotion) for tweet, emotion, score in testing_data]
 
     if args.features == "bow":
         X_train, X_test = utils.generate_features.generate_bow_features(X_train_corpus, X_test_corpus)
