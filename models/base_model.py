@@ -26,7 +26,7 @@ class Model(object):
         pass
 
     @abc.abstractmethod
-    def evaluate(self, metric):
+    def evaluate(self, predictions, ground_truth, metric):
         pass
 
     def score(self):

@@ -3,28 +3,24 @@ from preprocess_tweets import *
 from random import shuffle
 
 
-def load_training_testing_data(loc):
-    """
-    Load all of the training and testing data
-    Returns a 80-20 training/testing split
-    """
-
-    training_data = []
-    testing_data = []
-
-    for filename in os.listdir(loc):
+def load_data_from_dir(data_loc):
+    data = {}
+    for filename in os.listdir(data_loc):
         if filename.endswith(".txt"):
             emotion = filename.rstrip(".txt")
-            file_location = loc + "/" + filename
+            file_location = data_loc + "/" + filename
             tweets_for_emotion = load_tweets_for_emotion(file_location, emotion)
-            # shuffle the tweets for the emotion
-            shuffle(tweets_for_emotion)
+            data[emotion] = tweets_for_emotion
+    return data
 
-            train = tweets_for_emotion[0:int(len(tweets_for_emotion) * .80)]
-            test = tweets_for_emotion[int(len(tweets_for_emotion) * .80):]
 
-            training_data.extend(train)
-            testing_data.extend(test)
+def load_training_testing_data(training_data_loc, testing_data_loc):
+    """
+    Load all of the training and testing data (which is the dev data in our case)
+    """
+
+    training_data = load_data_from_dir(training_data_loc)
+    testing_data = load_data_from_dir(testing_data_loc)
 
     return training_data, testing_data
 
@@ -37,5 +33,5 @@ def load_tweets_for_emotion(loc, emotion):
             temp = line.split()
             score = float(temp[-1])
             tweet = clean_tweet(" ".join(temp[1:-2]))
-            tweets.append((tweet, emotion, score))
+            tweets.append((tweet, score))
     return tweets
