@@ -28,3 +28,10 @@ Project Organization
     ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
     │                         generated with `pip freeze > requirements.txt`
     ├── evaluate.py        <- Evaluation script
+
+
+## Training and evaluating models
+
+```
+python evaluate.py --model baseline --features lexicons --metrics pearson --optimize True
+```
