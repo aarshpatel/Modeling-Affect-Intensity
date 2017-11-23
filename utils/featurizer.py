@@ -6,183 +6,85 @@ class LexiconFeaturizer(object):
 
     def __init__(self, list_of_featurizers=[]):
         self.list_of_featurizers = []
-
-    def get_bigrams(self, tokens):
-        """ Return a list of bigram from a set of tokens """
-        return [a + " " + b for a, b in zip(tokens, tokens[1:])]
-
-    def nrc_hashtag_emotion(self, tokens):
-        """ Build features using NRC Hashtag emotion dataset """
-        nrc_hashtag_emotion_path = "../data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt.gz"
-        lexicon_map = defaultdict(list)
-
-        with gzip.open(nrc_hashtag_emotion_path, 'rb') as f:
-            lines = f.read().splitlines()
-            for l in lines[1:]:
-                splits = l.decode('utf-8').split('\t')
-                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
-        num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
-        sum_vec = [0.0] * num_features
-        for token in tokens:
-            if token in lexicon_map:
-                sum_vec = [a + b for a, b in zip(sum_vec, lexicon_map[token])] # sum up the individual word feature vectors
-        feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
-        feature_names = ['nrc_hashtag_emotion_' + name for name in feature_names]
-        return dict(zip(feature_names, sum_vec))
-
-    def nrc_affect_intensity(self, tokens):
-        """ Build feature vector using NRC affect intensity lexicons """
-        nrc_affect_intensity_path = "../data/lexicons/nrc_affect_intensity.txt.gz"
-        lexicon_map = defaultdict(list)
-
-        with gzip.open(nrc_affect_intensity_path, 'rb') as f:
-            lines = f.read().splitlines()
-            for l in lines[1:]:
-                splits = l.decode('utf-8').split('\t')
-                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
-
-        num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
-        sum_vec = [0.0] * num_features
-        for token in tokens:
-            if token in lexicon_map:
-                sum_vec = [a + b for a, b in zip(sum_vec, lexicon_map[token])]
         
-        feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
-        feature_names = ['nrc_affect_intensity_' + name for name in feature_names]
-        return dict(zip(feature_names, sum_vec))
+        # load all of the data
+        print("Loading all affect/sentiment lexicon data...")
+        self.nrc_hashtag_emotion_map = self.get_nrc_hashtag_emotion()
+        self.nrc_affect_intensity_map = self.get_nrc_affect_intensity()
+        self.nrc_hashtag_sentiment_unigrams_map = self.get_nrc_hashtag_sentiment_lexicon_unigrams()
+        self.nrc_hashtag_sentiment_bigrams_map = self.get_nrc_hashtag_sentiment_lexicon_bigrams()
+        self.sentiment140_unigrams_map = self.get_sentiment140_unigrams()
+        self.sentiment140_bigrams_map = self.get_sentiment140_bigrams()
+        self.senti_wordnet_map = self.get_senti_wordnet()
+        self.bing_lui_sent_lexicons_map = self.get_bing_lui_sentiment_lexicons()
+        self.get_nrc_10_expanded_map = self.get_nrc_10_expanded()
+        
+    def get_nrc_hashtag_emotion(self):
+        nrc_hashtag_emotion_path = "./data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt"
+        lexicon_map = defaultdict(list)
 
-    def nrc_hashtag_sentiment_lexicon_unigrams(self, tokens):
-        """
-        Function returns sum of intensities of
-        positive and negative tokens using only unigrams. Also returns
-        the number of positive and negative tokens
-        """
+        with open(nrc_hashtag_emotion_path, 'rb') as f:
+            lines = f.read().splitlines()
+            for l in lines[1:]:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
+        return lexicon_map
 
-        nrc_hashtag_sentiment_lexicon_unigrams_path = "../data/lexicons/NRC-Hashtag-Sentiment-Lexicon-v0.1/unigrams-pmilexicon.txt.gz"
-        with gzip.open(nrc_hashtag_sentiment_lexicon_unigrams_path, 'rb') as f:
+    def get_nrc_affect_intensity(self):
+        nrc_affect_intensity_path = "./data/lexicons/nrc_affect_intensity.txt"
+        lexicon_map = defaultdict(list)
+
+        with open(nrc_affect_intensity_path, 'rb') as f:
+            lines = f.read().splitlines()
+            for l in lines[1:]:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
+
+        return lexicon_map
+
+    def get_nrc_hashtag_sentiment_lexicon_unigrams(self):
+        nrc_hashtag_sentiment_lexicon_unigrams_path = "./data/lexicons/NRC-Hashtag-Sentiment-Lexicon-v0.1/unigrams-pmilexicon.txt"
+        with open(nrc_hashtag_sentiment_lexicon_unigrams_path, 'rb') as f:
             lines = f.read().splitlines()
             lexicon_map = {}
             for l in lines:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = float(splits[1])
+        return lexicon_map
 
-        positive_score, negative_score = 0.0, 0.0
-        positive_unigram_words, negative_unigram_words = 0, 0
-
-        for token in tokens:
-            if token in lexicon_map:
-                if lexicon_map[token] >= 0:
-                    positive_score += lexicon_map[token]
-                    positive_unigram_words += 1
-                else:
-                    negative_score += lexicon_map[token]
-                    negative_unigram_words += 1
-
-        return {
-            "nrc_hashtag_sentiment_positive_unigram_score": positive_score, 
-            "nrc_hastag_sentiment_negative_unigram_score": negative_score, 
-            "nrc_hashtag_sentiment_postive_unigram_words": positive_unigram_words, 
-            "nrc_hashtag_sentiment_negative_unigram_words": negative_unigram_words
-        }
-
-    def nrc_hashtag_sentiment_lexicon_bigrams(self, tokens):
-        """ 
-        Function returns sum of intensities of 
-        positive and negative tokens using only unigrams. Also returns
-        the number of positive and negative tokens
-        """
-
-        nrc_hashtag_sentiment_lexicon_bigrams_path = "../data/lexicons/NRC-Hashtag-Sentiment-Lexicon-v0.1/bigrams-pmilexicon.txt.gz"
-        with gzip.open(nrc_hashtag_sentiment_lexicon_bigrams_path, 'rb') as f:
+    def get_nrc_hashtag_sentiment_lexicon_bigrams(self):
+        nrc_hashtag_sentiment_lexicon_bigrams_path = "./data/lexicons/NRC-Hashtag-Sentiment-Lexicon-v0.1/bigrams-pmilexicon.txt"
+        with open(nrc_hashtag_sentiment_lexicon_bigrams_path, 'rb') as f:
             lines = f.read().splitlines()
             lexicon_map = {}
             for l in lines:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = float(splits[1])
+        return lexicon_map
 
-        positive_score, negative_score = 0.0, 0.0
-        positive_bigram_words, negative_bigram_words = 0, 0
-
-        # loop through the bigrams  
-        for token in self.get_bigrams(tokens):
-            if token in lexicon_map:
-                if lexicon_map[token] >= 0:
-                    positive_score += lexicon_map[token]
-                    positive_bigram_words += 1
-                else:
-                    negative_score += lexicon_map[token]
-                    negative_bigram_words += 1
-        return {
-            "nrc_hashtag_sentiment_positive_bigram_score": positive_score, 
-            "nrc_hastag_sentiment_negative_bigram_score": negative_score, 
-            "nrc_hashtag_sentiment_postive_bigram_words": positive_bigram_words, 
-            "nrc_hashtag_sentiment_negative_bigram_words": negative_bigram_words
-        }
-
-    def sentiment140_unigrams(self, tokens):
-        """ Sentiment 140 Unigram Lexicons features """
-        sentiment140_unigrams = "../data/lexicons/Sentiment140-Lexicon-v0.1/unigrams-pmilexicon.txt.gz"
-        with gzip.open(sentiment140_unigrams, 'rb') as f:
+    def get_sentiment140_unigrams(self):
+        sentiment140_unigrams = "./data/lexicons/Sentiment140-Lexicon-v0.1/unigrams-pmilexicon.txt"
+        with open(sentiment140_unigrams, 'rb') as f:
             lines = f.read().splitlines()
             lexicon_map = {}
             for l in lines:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = float(splits[1])
+        return lexicon_map
 
-        positive_score, negative_score = 0.0, 0.0
-        positive_unigram_words, negative_unigram_words = 0, 0   
-
-        # loop through the bigrams  
-        for token in tokens:
-            if token in lexicon_map:
-                if lexicon_map[token] >= 0:
-                    positive_score += lexicon_map[token]
-                    positive_unigram_words += 1
-                else:
-                    negative_score += lexicon_map[token]
-                    negative_unigram_words += 1
-        return {
-            "sentiment140_positive_unigram_score": positive_score, 
-            "sentiment140_negative_unigram_score": negative_score, 
-            "sentiment140_postive_unigram_words": positive_unigram_words, 
-            "sentiment140_negative_unigram_words": negative_unigram_words
-        }
-
-    def sentiment140_bigrams(self, tokens):
-        """ Sentiment 140 Unigram Lexicons features """
-        sentiment140_bigrams = "../data/lexicons/Sentiment140-Lexicon-v0.1/bigrams-pmilexicon.txt.gz"
-        with gzip.open(sentiment140_bigrams, 'rb') as f:
+    def get_sentiment140_bigrams(self):
+        sentiment140_bigrams = "./data/lexicons/Sentiment140-Lexicon-v0.1/bigrams-pmilexicon.txt"
+        with open(sentiment140_bigrams, 'rb') as f:
             lines = f.read().splitlines()
             lexicon_map = {}
             for l in lines:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = float(splits[1])
-
-        positive_score, negative_score = 0.0, 0.0
-        positive_bigram_words, negative_bigram_words = 0, 0 
-
-        # loop through the bigrams  
-        for token in self.get_bigrams(tokens):
-            if token in lexicon_map:
-                if lexicon_map[token] >= 0:
-                    positive_score += lexicon_map[token]
-                    positive_bigram_words += 1
-                else:
-                    negative_score += lexicon_map[token]
-                    negative_bigram_words += 1
-
-        return {
-            "sentiment140_positive_bigram_score": positive_score, 
-            "sentiment140_negative_bigram_score": negative_score, 
-            "sentiment140_postive_bigram_words": positive_bigram_words, 
-            "sentiment140_negative_bigram_words": negative_bigram_words
-        }
+        return lexicon_map
     
-    def senti_wordnet(self, tokens):
-        """ Returns features based on the SentiWordNet features """
-
-        senti_wordnet_path = "../data/lexicons/SentiWordNet_3.0.0.txt.gz"
-        with gzip.open(senti_wordnet_path, 'rb') as f:
+    def get_senti_wordnet(self):
+        senti_wordnet_path = "./data/lexicons/SentiWordNet_3.0.0.txt"
+        with open(senti_wordnet_path, 'rb') as f:
             lines = f.read().splitlines()
             senti_wordnet_lexicon_map = defaultdict(float)
 
@@ -200,18 +102,173 @@ class LexiconFeaturizer(object):
                     # scale scores according to rank
                     # more popular => less rank => high weight
                     senti_wordnet_lexicon_map[word] += (score / float(rank))
+        return senti_wordnet_lexicon_map
+
+    def get_bing_lui_sentiment_lexicons(self):
+        bing_lui_sentiment_lexicons_path = "./data/lexicons/BingLiu.txt"
+        lexicon_map = defaultdict(list)
+        
+        with open(bing_lui_sentiment_lexicons_path, 'rb') as f:
+            lines = f.read().splitlines()
+            lexicon_map = {}
+            for l in lines:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = splits[1]
+        return lexicon_map
+    
+    def get_nrc_10_expanded(self):
+        nrc_10_expanded_path = "./data/lexicons/w2v-dp-BCC-Lex.txt"
+        lexicon_map = defaultdict(list)
+        with open(nrc_10_expanded_path, 'rb') as f:
+            lines = f.read().splitlines()
+            for l in lines[1:]:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
+        return lexicon_map    
+    
+    def get_bigrams(self, tokens):
+        """ Return a list of bigram from a set of tokens """
+        return [a + " " + b for a, b in zip(tokens, tokens[1:])]
+    
+    
+    def nrc_hashtag_emotion(self, tokens):
+        """ Build features using NRC Hashtag emotion dataset """
+        num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
+        sum_vec = [0.0] * num_features
+        for token in tokens:
+            if token in self.nrc_hashtag_emotion_map:
+                sum_vec = [a + b for a, b in zip(sum_vec, self.nrc_hashtag_emotion_map[token])] # sum up the individual word feature vectors
+        feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
+        feature_names = ['nrc_hashtag_emotion_' + name for name in feature_names]
+        return dict(zip(feature_names, sum_vec))
+    
+    
+    def nrc_affect_intensity(self, tokens):
+        """ Build feature vector using NRC affect intensity lexicons """ 
+        num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
+        sum_vec = [0.0] * num_features
+        for token in tokens:
+            if token in self.nrc_affect_intensity_map:
+                sum_vec = [a + b for a, b in zip(sum_vec, self.nrc_affect_intensity_map[token])]
+        
+        feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
+        feature_names = ['nrc_affect_intensity_' + name for name in feature_names]
+        return dict(zip(feature_names, sum_vec))
+    
+    
+    def nrc_hashtag_sentiment_lexicon_unigrams(self, tokens):
+        """
+        Function returns sum of intensities of
+        positive and negative tokens using only unigrams. Also returns
+        the number of positive and negative tokens
+        """
+
+        positive_score, negative_score = 0.0, 0.0
+        positive_unigram_words, negative_unigram_words = 0, 0
+
+        for token in tokens:
+            if token in self.nrc_hashtag_sentiment_unigrams_map:
+                if self.nrc_hashtag_sentiment_unigrams_map[token] >= 0:
+                    positive_score += self.nrc_hashtag_sentiment_unigrams_map[token]
+                    positive_unigram_words += 1
+                else:
+                    negative_score += self.nrc_hashtag_sentiment_unigrams_map[token]
+                    negative_unigram_words += 1
+
+        return {
+            "nrc_hashtag_sentiment_positive_unigram_score": positive_score, 
+            "nrc_hastag_sentiment_negative_unigram_score": negative_score, 
+            "nrc_hashtag_sentiment_postive_unigram_words": positive_unigram_words, 
+            "nrc_hashtag_sentiment_negative_unigram_words": negative_unigram_words
+        }
+
+    
+    def nrc_hashtag_sentiment_lexicon_bigrams(self, tokens):
+        """ 
+        Function returns sum of intensities of 
+        positive and negative tokens using only unigrams. Also returns
+        the number of positive and negative tokens
+        """
+
+        positive_score, negative_score = 0.0, 0.0
+        positive_bigram_words, negative_bigram_words = 0, 0
+
+        # loop through the bigrams
+        for token in self.get_bigrams(tokens):
+            if token in self.nrc_hashtag_sentiment_bigrams_map:
+                if self.nrc_hashtag_sentiment_bigrams_map[token] >= 0:
+                    positive_score += self.nrc_hashtag_sentiment_bigrams_map[token]
+                    positive_bigram_words += 1
+                else:
+                    negative_score += self.nrc_hashtag_sentiment_bigrams_map[token]
+                    negative_bigram_words += 1
+        return {
+            "nrc_hashtag_sentiment_positive_bigram_score": positive_score, 
+            "nrc_hastag_sentiment_negative_bigram_score": negative_score, 
+            "nrc_hashtag_sentiment_postive_bigram_words": positive_bigram_words, 
+            "nrc_hashtag_sentiment_negative_bigram_words": negative_bigram_words
+        }
+    
+    
+    def sentiment140_unigrams(self, tokens):
+        """ Sentiment 140 Unigram Lexicons features """
+        positive_score, negative_score = 0.0, 0.0
+        positive_unigram_words, negative_unigram_words = 0, 0
+
+        # loop through the bigrams
+        for token in tokens:
+            if token in self.sentiment140_unigrams_map:
+                if self.sentiment140_unigrams_map[token] >= 0:
+                    positive_score += self.sentiment140_unigrams_map[token]
+                    positive_unigram_words += 1
+                else:
+                    negative_score += self.sentiment140_unigrams_map[token]
+                    negative_unigram_words += 1
+        return {
+            "sentiment140_positive_unigram_score": positive_score, 
+            "sentiment140_negative_unigram_score": negative_score, 
+            "sentiment140_postive_unigram_words": positive_unigram_words, 
+            "sentiment140_negative_unigram_words": negative_unigram_words
+        }
+    
+    
+    def sentiment140_bigrams(self, tokens):
+        """ Sentiment 140 Unigram Lexicons features """
+        positive_score, negative_score = 0.0, 0.0
+        positive_bigram_words, negative_bigram_words = 0, 0 
+
+        # loop through the bigrams
+        for token in self.get_bigrams(tokens):
+            if token in self.sentiment140_bigrams_map:
+                if self.sentiment140_bigrams_map[token] >= 0:
+                    positive_score += self.sentiment140_bigrams_map[token]
+                    positive_bigram_words += 1
+                else:
+                    negative_score += self.sentiment140_bigrams_map[token]
+                    negative_bigram_words += 1
+
+        return {
+            "sentiment140_positive_bigram_score": positive_score, 
+            "sentiment140_negative_bigram_score": negative_score, 
+            "sentiment140_postive_bigram_words": positive_bigram_words, 
+            "sentiment140_negative_bigram_words": negative_bigram_words
+        }
+    
+     
+    def senti_wordnet(self, tokens):
+        """ Returns features based on the SentiWordNet features """
 
         positive_score, negative_score = 0.0, 0.0
         positive_unigram_words, negative_unigram_words = 0, 0
 
         # loop through the bigrams  
         for token in tokens:
-            if token in senti_wordnet_lexicon_map:
-                if senti_wordnet_lexicon_map[token] >= 0:
-                    positive_score += senti_wordnet_lexicon_map[token]
+            if token in self.senti_wordnet_map:
+                if self.senti_wordnet_map[token] >= 0:
+                    positive_score += self.senti_wordnet_map[token]
                     positive_unigram_words += 1
                 else:
-                    negative_score += senti_wordnet_lexicon_map[token]
+                    negative_score += self.senti_wordnet_map[token]
                     negative_unigram_words += 1
 
         return  {
@@ -224,20 +281,10 @@ class LexiconFeaturizer(object):
     
     def bing_lui_sentiment_lexicons(self, tokens):
         """ Build features using NRC Hashtag emotion dataset """
-        bing_lui_sentiment_lexicons_path = "../data/lexicons/BingLiu.txt.gz"
-        lexicon_map = defaultdict(list)
-        
-        with gzip.open(bing_lui_sentiment_lexicons_path, 'rb') as f:
-            lines = f.read().splitlines()
-            lexicon_map = {}
-            for l in lines:
-                splits = l.decode('utf-8').split('\t')
-                lexicon_map[splits[0]] = splits[1]
-
         positive_count, negative_count = 0.0, 0.0
         for token in tokens:
-            if token in lexicon_map:
-                if lexicon_map[token] == 'positive':
+            if token in self.bing_lui_sent_lexicons_map:
+                if self.bing_lui_sent_lexicons_map[token] == 'positive':
                     positive_count += 1
                 else:
                     negative_count += 1
@@ -246,27 +293,24 @@ class LexiconFeaturizer(object):
             "bing_lui_sentiment_lexicon_negative_count" : negative_count
         }
     
+    
     def nrc_10_expanded(self, tokens): 
         """ Build features using NRC 10 Expanded lexicons dataset """
-        nrc_10_expanded_path = "../data/lexicons/w2v-dp-BCC-Lex.txt.gz"
-        lexicon_map = defaultdict(list)
-        with gzip.open(nrc_10_expanded_path, 'rb') as f:
-            lines = f.read().splitlines()
-            for l in lines[1:]:
-                splits = l.decode('utf-8').split('\t')
-                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
         num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
         sum_vec = [0.0] * num_features
         for token in tokens:
-            if token in lexicon_map:
-                sum_vec = [a + b for a, b in zip(sum_vec, lexicon_map[token])] # sum up the individual word feature vectors
+            if token in self.get_nrc_10_expanded_map:
+                sum_vec = [a + b for a, b in zip(sum_vec, self.get_nrc_10_expanded_map[token])] # sum up the individual word feature vectors
         feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
         feature_names = ['nrc_expanded_' + name for name in feature_names]
         return dict(zip(feature_names, sum_vec))
-        
+    
+    
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
-        features = {}
+        features = []
+        
+    
         nrc_hashtag_emotion_features = self.nrc_hashtag_emotion(tokens)
         nrc_affect_intensity_features = self.nrc_affect_intensity(tokens)
         nrc_hashtag_sentiment_lexicon_unigrams_features = self.nrc_hashtag_sentiment_lexicon_unigrams(tokens)
@@ -277,21 +321,13 @@ class LexiconFeaturizer(object):
         bing_lui_sentiment_lexicons_features = self.bing_lui_sentiment_lexicons(tokens)
         nrc_expanded_lexicon_features = self.nrc_10_expanded(tokens)
         
-        features.update(nrc_hashtag_emotion_features) # 10 features
-        features.update(nrc_affect_intensity_features) # 10 features
-        features.update(nrc_hashtag_sentiment_lexicon_unigrams_features) # 4 features
-        features.update(nrc_hashtag_sentiment_lexicon_bigrams_features) # 4 features
-        features.update(sentiment140_unigrams_features) # 4 features 
-        features.update(sentiment140_bigrams_features) # 4 features
-        features.update(senti_wordnet_features) # 4 features
-        features.update(bing_lui_sentiment_lexicons_features) # 2 features
-        features.update(nrc_expanded_lexicon_features) # 10 features
+        features.extend(nrc_hashtag_emotion_features.values()) # 10 features
+        features.extend(nrc_affect_intensity_features.values()) # 10 features
+        features.extend(nrc_hashtag_sentiment_lexicon_unigrams_features.values()) # 4 features
+        features.extend(nrc_hashtag_sentiment_lexicon_bigrams_features.values()) # 4 features
+        features.extend(sentiment140_unigrams_features.values()) # 4 features 
+        features.extend(sentiment140_bigrams_features.values()) # 4 features
+        features.extend(senti_wordnet_features.values()) # 4 features
+        features.extend(bing_lui_sentiment_lexicons_features.values()) # 2 features
+        features.extend(nrc_expanded_lexicon_features.values()) # 10 features
         return features
-
-# Example of using the featurizer
-def test_featurizer():
-    featurizer = LexiconFeaturizer()
-    features = featurizer.featurize([u'So', u'my', u'Indian', u'Uber', u'driver', u'just', u'called', u'someone', u'the', u'N', u'word', u'.', u'If', u'I', u"wasn't", u'in', u'a', u'moving', u'vehicle', u"I'd", u'have', u'jumped', u'out', u'#disgusted'])
-    return features
-
-test_featurizer()
