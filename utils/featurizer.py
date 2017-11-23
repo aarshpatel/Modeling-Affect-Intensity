@@ -221,6 +221,31 @@ class LexiconFeaturizer(object):
             "senti_wordnet_negative_words": negative_unigram_words
         }
 
+    
+    def bing_lui_sentiment_lexicons(self, tokens):
+        """ Build features using NRC Hashtag emotion dataset """
+        bing_lui_sentiment_lexicons_path = "../data/lexicons/BingLiu.txt.gz"
+        lexicon_map = defaultdict(list)
+        
+        with gzip.open(bing_lui_sentiment_lexicons_path, 'rb') as f:
+            lines = f.read().splitlines()
+            lexicon_map = {}
+            for l in lines:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = splits[1]
+
+        positive_count, negative_count = 0.0, 0.0
+        for token in tokens:
+            if token in lexicon_map:
+                if lexicon_map[token] == 'positive':
+                    positive_count += 1
+                else:
+                    negative_count += 1
+        return {
+            "bing_lui_sentiment_lexicon_positive_count" : positive_count,
+            "bing_lui_sentiment_lexicon_negative_count" : negative_count
+        }
+    
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
         features = {}
@@ -231,7 +256,8 @@ class LexiconFeaturizer(object):
         sentiment140_unigrams_features = self.sentiment140_unigrams(tokens)
         sentiment140_bigrams_features = self.sentiment140_bigrams(tokens)
         senti_wordnet_features = self.senti_wordnet(tokens)
-
+        bing_lui_sentiment_lexicons_features = self.bing_lui_sentiment_lexicons(tokens)
+        
         features.update(nrc_hashtag_emotion_features) # 10 features
         features.update(nrc_affect_intensity_features) # 10 features
         features.update(nrc_hashtag_sentiment_lexicon_unigrams_features) # 4 features
@@ -239,6 +265,7 @@ class LexiconFeaturizer(object):
         features.update(sentiment140_unigrams_features) # 4 features 
         features.update(sentiment140_bigrams_features) # 4 features
         features.update(senti_wordnet_features) # 4 features
+        features.update(bing_lui_sentiment_lexicons_features) # 2 features
 
         return features
 
@@ -248,4 +275,4 @@ def test_featurizer():
     features = featurizer.featurize([u'So', u'my', u'Indian', u'Uber', u'driver', u'just', u'called', u'someone', u'the', u'N', u'word', u'.', u'If', u'I', u"wasn't", u'in', u'a', u'moving', u'vehicle', u"I'd", u'have', u'jumped', u'out', u'#disgusted'])
     return features
 
-print(test_featurizer())
+test_featurizer()
