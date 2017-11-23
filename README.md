@@ -33,5 +33,5 @@ Project Organization
 ## Training and evaluating models
 
 ```
-python evaluate.py --model baseline --features lexicons --metrics pearson --optimize True
+python evaluate.py --model model_name --features feature_type --metrics metric1, metric2 --optimize True/False
 ```
