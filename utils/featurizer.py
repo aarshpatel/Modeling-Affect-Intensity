@@ -246,6 +246,24 @@ class LexiconFeaturizer(object):
             "bing_lui_sentiment_lexicon_negative_count" : negative_count
         }
     
+    def nrc_10_expanded(self, tokens): 
+        """ Build features using NRC 10 Expanded lexicons dataset """
+        nrc_10_expanded_path = "../data/lexicons/w2v-dp-BCC-Lex.txt.gz"
+        lexicon_map = defaultdict(list)
+        with gzip.open(nrc_10_expanded_path, 'rb') as f:
+            lines = f.read().splitlines()
+            for l in lines[1:]:
+                splits = l.decode('utf-8').split('\t')
+                lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
+        num_features = 10  # 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust'
+        sum_vec = [0.0] * num_features
+        for token in tokens:
+            if token in lexicon_map:
+                sum_vec = [a + b for a, b in zip(sum_vec, lexicon_map[token])] # sum up the individual word feature vectors
+        feature_names = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'negative', 'positive', 'sadness', 'surprise', 'trust']
+        feature_names = ['nrc_expanded_' + name for name in feature_names]
+        return dict(zip(feature_names, sum_vec))
+        
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
         features = {}
@@ -257,6 +275,7 @@ class LexiconFeaturizer(object):
         sentiment140_bigrams_features = self.sentiment140_bigrams(tokens)
         senti_wordnet_features = self.senti_wordnet(tokens)
         bing_lui_sentiment_lexicons_features = self.bing_lui_sentiment_lexicons(tokens)
+        nrc_expanded_lexicon_features = self.nrc_10_expanded(tokens)
         
         features.update(nrc_hashtag_emotion_features) # 10 features
         features.update(nrc_affect_intensity_features) # 10 features
@@ -266,7 +285,7 @@ class LexiconFeaturizer(object):
         features.update(sentiment140_bigrams_features) # 4 features
         features.update(senti_wordnet_features) # 4 features
         features.update(bing_lui_sentiment_lexicons_features) # 2 features
-
+        features.update(nrc_expanded_lexicon_features) # 10 features
         return features
 
 # Example of using the featurizer
