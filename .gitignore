@@ -1,3 +1,5 @@
-*.pyc
+utils/*.pyc
+models/*.pyc
 .DS_Store
 .idea
+tweetokenize

@@ -1,0 +1,6 @@
+Evaluated <class 'sklearn.svm.classes.SVR'> using pearson
+anger : 0.500203146771
+joy : 0.54688778623
+fear : 0.607970706085
+sadness : 0.493490365684
+AVG 0.493490365684

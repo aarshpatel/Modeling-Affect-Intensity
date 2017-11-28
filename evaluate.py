@@ -58,8 +58,6 @@ if __name__ == "__main__":
     featurizer = utils.generate_features.Featurizer(args.features, train_corpus, test_corpus)
     X_train, X_test = featurizer.generate_all_features()
 
-    print X_train
-
     optimization_parameters = {
         'RandomForestRegresssor': {
             'n_estimators': [10, 20, 30, 50, 100, 500]
