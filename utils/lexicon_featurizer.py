@@ -20,6 +20,7 @@ class LexiconFeaturizer(object):
         self.get_nrc_10_expanded_map = self.get_nrc_10_expanded()
         self.negating_word_list = self.get_negating_word_list()
         self.mpqa_subjectivity_lexicon_map = self.get_mpqa_subjectivity_lexicon()
+        self.afinn_sentiment_scores_map = self.get_afinn_sentiment_scores()
         
     def get_nrc_hashtag_emotion(self):
         nrc_hashtag_emotion_path = "./data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt"
@@ -147,6 +148,14 @@ class LexiconFeaturizer(object):
                 lexicon_map[line_split[0]] = line_split[1]
         return lexicon_map
 
+    def get_afinn_sentiment_scores(self):
+        afinn_sentiment_path = "./data/lexicons/AFINN-en-165.txt"
+        lexicon_map = {}
+        with open(afinn_sentiment_path, "r") as f:
+            for line in f.readlines():
+                line_split = line.split()
+                lexicon_map[" ".join(line_split[:-1])] = float(line_split[-1])
+        return lexicon_map
 
     
     def get_bigrams(self, tokens):
@@ -288,7 +297,7 @@ class LexiconFeaturizer(object):
                 else:
                     feature_dict["mpqa_subjectivity_negative"] += 1
         return feature_dict
-    
+
     def senti_wordnet(self, tokens):
         """ Returns features based on the SentiWordNet features """
 
@@ -351,6 +360,18 @@ class LexiconFeaturizer(object):
         """ Return the total number of words in the tweet as a feature """
         return {"total_number_of_words": len(tokens)}
 
+    def afinn_sentiment_scores(self, tokens):
+        """ Afinn Sentiment Score """
+
+        positive_score, negative_score = 0.0, 0.0
+        for token in tokens:
+            if token in self.afinn_sentiment_scores_map:
+                if self.afinn_sentiment_scores_map[token] > 0:
+                    positive_score += self.afinn_sentiment_scores_map[token]
+                else:
+                    negative_score += self.afinn_sentiment_scores_map[token]
+        return {"afinn_sentiment_positive_score": positive_score, "afinn_sentiment_negative_score": negative_score}
+
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
         features = []
@@ -367,7 +388,8 @@ class LexiconFeaturizer(object):
         negating_word_list_features = self.negating_words_list(tokens)
         total_number_of_words_features = self.get_total_number_of_words(tokens)
         mpqa_subjectivity_lexicon_features = self.mpqa_subjectivity_lexicon(tokens)
-        
+        afinn_sentiment_features = self.afinn_sentiment_scores(tokens)
+
         features.extend(nrc_hashtag_emotion_features.values()) # 10 features
         features.extend(nrc_affect_intensity_features.values()) # 10 features
         features.extend(nrc_hashtag_sentiment_lexicon_unigrams_features.values()) # 4 features
@@ -377,8 +399,9 @@ class LexiconFeaturizer(object):
         features.extend(senti_wordnet_features.values()) # 4 features
         features.extend(bing_lui_sentiment_lexicons_features.values()) # 2 features
         features.extend(nrc_expanded_lexicon_features.values()) # 10 features
-        features.extend(negating_word_list_features.values())
-        features.extend(total_number_of_words_features.values())
-        features.extend(mpqa_subjectivity_lexicon_features.values())
+        features.extend(negating_word_list_features.values()) # 1 feature
+        features.extend(total_number_of_words_features.values()) # 1 feature
+        features.extend(mpqa_subjectivity_lexicon_features.values()) # 2 features
+        features.extend(afinn_sentiment_features.values()) # 2 features
 
         return features
