@@ -265,7 +265,6 @@ class LexiconFeaturizer(object):
             "sentiment140_negative_bigram_words": negative_bigram_words
         }
     
-     
     def senti_wordnet(self, tokens):
         """ Returns features based on the SentiWordNet features """
 
@@ -316,19 +315,22 @@ class LexiconFeaturizer(object):
         feature_names = ['nrc_expanded_' + name for name in feature_names]
         return dict(zip(feature_names, sum_vec))
 
-    def negating_word_list(self, tokens):
+    def negating_words_list(self, tokens):
+        """ Return the number of negating words as a feature """
         num_of_negating_words = 0
         for token in tokens:
-            if token in self.get_negating_word_list_map:
+            if token in self.negating_word_list:
                 num_of_negating_words += 1
         return {"num_of_negating_words": num_of_negating_words}
 
-    
+    def get_total_number_of_words(self, tokens):
+        """ Return the total number of words in the tweet as a feature """
+        return {"total_number_of_words": len(tokens)}
+
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
         features = []
         
-    
         nrc_hashtag_emotion_features = self.nrc_hashtag_emotion(tokens)
         nrc_affect_intensity_features = self.nrc_affect_intensity(tokens)
         nrc_hashtag_sentiment_lexicon_unigrams_features = self.nrc_hashtag_sentiment_lexicon_unigrams(tokens)
@@ -338,7 +340,8 @@ class LexiconFeaturizer(object):
         senti_wordnet_features = self.senti_wordnet(tokens)
         bing_lui_sentiment_lexicons_features = self.bing_lui_sentiment_lexicons(tokens)
         nrc_expanded_lexicon_features = self.nrc_10_expanded(tokens)
-        negating_word_list_features = self.negating_word_list(tokens)
+        negating_word_list_features = self.negating_words_list(tokens)
+        total_number_of_words_features = self.get_total_number_of_words(tokens)
         
         features.extend(nrc_hashtag_emotion_features.values()) # 10 features
         features.extend(nrc_affect_intensity_features.values()) # 10 features
@@ -350,4 +353,6 @@ class LexiconFeaturizer(object):
         features.extend(bing_lui_sentiment_lexicons_features.values()) # 2 features
         features.extend(nrc_expanded_lexicon_features.values()) # 10 features
         features.extend(negating_word_list_features.values())
+        features.extend(total_number_of_words_features.values())
+
         return features
