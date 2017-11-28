@@ -1,14 +1,11 @@
 """ Trains and evaluates the model on the different emotions """
 import argparse
 import imp
-import sys
-import os
 import utils
 import numpy as np
-from sklearn.model_selection import train_test_split
-from tqdm import tqdm
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
+
 
 def load_model(model_name, X_train, y_train, X_test, y_test, optimization_parameters, sklearn_model):
     """ Loads the model with the correct parameters """
@@ -16,10 +13,10 @@ def load_model(model_name, X_train, y_train, X_test, y_test, optimization_parame
     model = model_source.Model(X_train, y_train, X_test, y_test, optimization_parameters, sklearn_model)
     return model
 
+
 def get_labels(data):
     """ Returns the labels for each emotion """
     return {emotion: np.array([val[-1] for val in values]) for emotion, values in data.iteritems()}
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,17 +55,15 @@ if __name__ == "__main__":
     featurizer = utils.generate_features.Featurizer(args.features, train_corpus, test_corpus)
     X_train, X_test = featurizer.generate_all_features()
 
-    print X_train
-
     optimization_parameters = {
-        'RandomForestRegresssor': {
+        'RandomForestRegressor': {
             'n_estimators': [10, 20, 30, 50, 100, 500]
         },
         'SVR': {'C': [0.001, 0.01, 0.1, 1, 10]}
     }
 
-    # load the model
-    model = load_model(args.model, X_train, y_train, X_test, y_test, optimization_parameters["SVR"], SVR)
+    # load the model (you don't need to pass in a sklearn model)
+    model = load_model(args.model, X_train, y_train, X_test, y_test, optimization_parameters["RandomForestRegressor"], RandomForestRegressor)
 
     if args.optimize == 'True':
         best_model_params = model.optimize("pearson_correlation") # which metric to optimize models
@@ -82,5 +77,5 @@ if __name__ == "__main__":
         eval_score, avg_eval = model.evaluate(predictions, y_test, metric)
         print("\n")
         for emotion, score in eval_score.iteritems():
-            print emotion, score 
+            print emotion, score
         print("AVG {0}: {1}".format(metric, avg_eval))
