@@ -82,5 +82,10 @@ class EmbeddingFeaturizer(object):
                     sum_vec = sum_vec + self.emoji_model[token.decode('utf-8')]
             except:
                 pass
-        sum_vec = sum_vec / emojis
+
+        if emojis == 0:
+            sum_vec = sum_vec
+        else:
+            sum_vec = sum_vec / emojis
+            
         return sum_vec

@@ -1,5 +1,5 @@
 from collections import defaultdict
-import gzip
+
 
 class LexiconFeaturizer(object):
     """ A class that featurizes a tweet affect/sentiment lexicons"""
@@ -19,7 +19,7 @@ class LexiconFeaturizer(object):
         self.bing_lui_sent_lexicons_map = self.get_bing_lui_sentiment_lexicons()
         self.get_nrc_10_expanded_map = self.get_nrc_10_expanded()
         self.negating_word_list = self.get_negating_word_list()
-        
+
     def get_nrc_hashtag_emotion(self):
         nrc_hashtag_emotion_path = "./data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt"
         lexicon_map = defaultdict(list)

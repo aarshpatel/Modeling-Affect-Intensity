@@ -123,7 +123,7 @@ class Featurizer(object):
                     train_full[emotion] = train_feats
                 else:
                    # concatentate the matrices
-                   concat_features = sparse.hstack((train_full[emotion], train_feats)) 
+                   concat_features = np.hstack((train_full[emotion], train_feats)) 
                    train_full[emotion] = concat_features
 
             for emotion, test_feats in test_features.iteritems():
@@ -131,7 +131,7 @@ class Featurizer(object):
                     test_full[emotion] = test_feats 
                 else:
                    # concatentate the matrices
-                   concat_features = sparse.hstack((test_full[emotion], test_feats)) 
+                   concat_features = np.hstack((test_full[emotion], test_feats)) 
                    test_full[emotion] = concat_features
 
         return train_full, test_full
