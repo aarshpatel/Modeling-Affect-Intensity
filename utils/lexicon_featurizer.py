@@ -19,6 +19,7 @@ class LexiconFeaturizer(object):
         self.bing_lui_sent_lexicons_map = self.get_bing_lui_sentiment_lexicons()
         self.get_nrc_10_expanded_map = self.get_nrc_10_expanded()
         self.negating_word_list = self.get_negating_word_list()
+        self.mpqa_subjectivity_lexicon_map = self.get_mpqa_subjectivity_lexicon()
         
     def get_nrc_hashtag_emotion(self):
         nrc_hashtag_emotion_path = "./data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt"
@@ -125,7 +126,7 @@ class LexiconFeaturizer(object):
             for l in lines[1:]:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
-        return lexicon_map   
+        return lexicon_map
 
 
     def get_negating_word_list(self):
@@ -135,7 +136,18 @@ class LexiconFeaturizer(object):
             for word in f.readlines():
                 word = word.rstrip("\n")
                 negating_words.append(word)
-        return negating_words        
+        return negating_words
+
+    def get_mpqa_subjectivity_lexicon(self):
+        mpqa_lexicon_path = "./data/lexicons/mpqa.txt"
+        lexicon_map = {}
+        with open(mpqa_lexicon_path, "r") as f:
+            for line in f.readlines():
+                line_split = line.split()
+                lexicon_map[line_split[0]] = line_split[1]
+        return lexicon_map
+
+
     
     def get_bigrams(self, tokens):
         """ Return a list of bigram from a set of tokens """
@@ -264,6 +276,18 @@ class LexiconFeaturizer(object):
             "sentiment140_postive_bigram_words": positive_bigram_words, 
             "sentiment140_negative_bigram_words": negative_bigram_words
         }
+
+    def mpqa_subjectivity_lexicon(self, tokens):
+        """ Say something """
+        feature_dict = {"mpqa_subjectivity_positive": 0, "mpqa_subjectivity_negative": 0}
+
+        for token in tokens:
+            if token in self.mpqa_subjectivity_lexicon_map:
+                if self.mpqa_subjectivity_lexicon_map[token] == "positive":
+                    feature_dict["mpqa_subjectivity_positive"] += 1
+                else:
+                    feature_dict["mpqa_subjectivity_negative"] += 1
+        return feature_dict
     
     def senti_wordnet(self, tokens):
         """ Returns features based on the SentiWordNet features """
@@ -342,6 +366,7 @@ class LexiconFeaturizer(object):
         nrc_expanded_lexicon_features = self.nrc_10_expanded(tokens)
         negating_word_list_features = self.negating_words_list(tokens)
         total_number_of_words_features = self.get_total_number_of_words(tokens)
+        mpqa_subjectivity_lexicon_features = self.mpqa_subjectivity_lexicon(tokens)
         
         features.extend(nrc_hashtag_emotion_features.values()) # 10 features
         features.extend(nrc_affect_intensity_features.values()) # 10 features
@@ -354,5 +379,6 @@ class LexiconFeaturizer(object):
         features.extend(nrc_expanded_lexicon_features.values()) # 10 features
         features.extend(negating_word_list_features.values())
         features.extend(total_number_of_words_features.values())
+        features.extend(mpqa_subjectivity_lexicon_features.values())
 
         return features
