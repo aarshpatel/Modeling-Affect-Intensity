@@ -1,5 +1,5 @@
 from collections import defaultdict
-import gzip
+
 
 class LexiconFeaturizer(object):
     """ A class that featurizes a tweet affect/sentiment lexicons"""
