@@ -1,52 +1,51 @@
+""" Implementation of baseline model using any set of features """
 import utils
 import pickle
 from models import base_model
 import numpy as np
 from sklearn.model_selection import GridSearchCV
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
-from keras.wrappers.scikit_learn import KerasRegressor
 
 class Model(base_model.Model):
-    """ 
-    Implementation of AVG Embedding (uses glove embeddings)
-    Take the avg embedding of the tweets and feed that into a feed forward neural network to compute scores
-    """
+    """ Implementation of baseline model """
 
     def __init__(self, X_train, y_train, X_test, y_test, optimization_parameters={}, sklearn_model=None):
         base_model.Model.__init__(self, X_train, y_train, X_test, y_test, optimization_parameters)
+        self.sklearn_model = sklearn_model
 
     def train(self, optimization_parameters=None):
-        """ Train a model that predict affect intenity based on avg embedding of the tweets """
-        input_dim = X_train["angry"].shape
+        """ Train the baseline model on all emotions """
         self.trained_models = {}
         for emotion, features in self.X_train.iteritems():
-            model = self._build_keras_model(input_dim) 
-            clf = KerasRegressor(build_fn=model, nb_epoch=50, batch_size=16,verbose=1)
-            clf.fit(features, self.y_train[emotion])
-            self.trained_models[emotion] = clf
+            model = self.sklearn_model() # use the default hyperparameters
+            if optimization_parameters:
+                model.set_params(**optimization_parameters[emotion])
 
-    def _build_keras_model(self, input_dim):
-        """ Build the keras model """
-        model = Sequential()
-        model.add(Dense(50, input_dim=input_dim, init='normal'))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))
-        # model.add(Dense(20))
-        # model.add(Activation('relu'))
-        # model.add(Dropout(0.5))
-        model.add(Dense(1))
-        model.compile(loss='mean_squared_error', optimizer = 'adam')
-        return model
-      
+            self.trained_models[emotion] = model.fit(features, self.y_train[emotion])
+
     def optimize(self, metric):
         """ 
         Optimize the baseline model. We don't want to optimize our baseline model
+        
         @metric: the metric to optimize model
-
-        TODO: how to optimize sklearn regression DNN model
         """
-        pass
+
+        print('Optimizing model {0} using {1}'.format(repr(self.sklearn_model), metric))
+
+        if metric == "rmse":
+            scoring_metric = utils.metrics.rmse_scorer
+        elif metric == "mse":
+            scoring_metric = utils.metrics.mse_scorer
+        elif metric == "pearson_correlation":
+            scoring_metric = utils.metrics.pearson_scorer
+
+        optimized_models = {}
+        for emotion, features in self.X_train.iteritems():
+
+            grid = GridSearchCV(self.sklearn_model(), self.optimization_parameters, n_jobs=-1, cv=5, scoring=scoring_metric)
+            grid.fit(features, self.y_train[emotion])
+
+            optimized_models[emotion] = grid.best_params_
+        return optimized_models
 
     def predict(self):
         """ Predict on new test data """
