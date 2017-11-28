@@ -19,7 +19,10 @@ class Featurizer(object):
             "lexicons": self.generate_lexical_features,
             "glove": self.generate_glove_embedding_features,
             "bow": self.generate_bow_features,
-            "tfidf": self.generate_tfidf_features 
+            "tfidf": self.generate_tfidf_features,
+            "ngram-bow": self.generate_ngram_bow_features,
+            "ngram-tfidf": self.generate_ngram_tfidf_features,
+            "emoji": self.generate_emoji_embedding_features
         }
 
     def generate_lexical_features(self):
@@ -37,7 +40,15 @@ class Featurizer(object):
         train_features = {emotion: np.array([embedding_featurizer.glove_embeddings_for_tweet(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.train.iteritems()}
         test_features = {emotion: np.array([embedding_featurizer.glove_embeddings_for_tweet(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.test.iteritems()}
         return train_features, test_features
-        
+    
+    def generate_emoji_embedding_features(self):
+        """ Generate emoji embedding features """
+        print("Building Emoji Embedding Features for data...")
+        embedding_featurizer = EmbeddingFeaturizer(emoji=True) # use emoji embeddings
+        train_features = {emotion: np.array([embedding_featurizer.emoji_embeddings_for_tweets(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.train.iteritems()}
+        test_features = {emotion: np.array([embedding_featurizer.emoji_embeddings_for_tweets(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.test.iteritems()}
+        return train_features, test_features
+         
     def generate_bow_features(self):
         """ Generate the bow features for the emotion dataset """
         print("Using BoW features")
@@ -50,6 +61,32 @@ class Featurizer(object):
         train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
         test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
         return train_data_bow, test_data_bow
+
+    def generate_ngram_bow_features(self):
+        """ Generate ngram features for the emotion dataset """ 
+        print("Using NGram Features")
+        corpus = []
+        for emotion, tweets in self.train.iteritems():
+            corpus.extend(tweets)
+
+        vectorizer = CountVectorizer(ngram_range=(1,3)) # use unigram, bigram and trigram features
+        vectorizer.fit(corpus)
+        train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
+        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
+        return train_data_bow, test_data_bow 
+
+    def generate_ngram_tfidf_features(self):
+        """ Generate ngram tfidf features for the emotion dataset """
+        print("Using NGram Tf-idf features")
+        corpus = []
+        for emotion, tweets in self.train.iteritems():
+            corpus.extend(tweets)
+
+        vectorizer = TfidfVectorizer(ngram_range=(1,3)) # use unigram, bigram and trigram features
+        vectorizer.fit(corpus)
+        train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
+        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
+        return train_data_bow, test_data_bow 
 
     def generate_tfidf_features(self):
         """ Generate tfidf features for training and testing data"""
@@ -71,8 +108,8 @@ class Featurizer(object):
         Do not do this for bow + tfidf (both are sparse matrices)
         """
 
-        train_full =  {}
-        test_full = {}
+        train_full =  {} # contains all combined train features for each emotion
+        test_full = {} # contains all combined test features for each emotion 
 
         for featurizer in self.featurizers:
             print("featurizer:", featurizer)
@@ -86,7 +123,7 @@ class Featurizer(object):
                     train_full[emotion] = train_feats
                 else:
                    # concatentate the matrices
-                   concat_features = np.hstack((train_full[emotion], train_feats)) 
+                   concat_features = sparse.hstack((train_full[emotion], train_feats)) 
                    train_full[emotion] = concat_features
 
             for emotion, test_feats in test_features.iteritems():
@@ -94,7 +131,7 @@ class Featurizer(object):
                     test_full[emotion] = test_feats 
                 else:
                    # concatentate the matrices
-                   concat_features = np.hstack((test_full[emotion], test_feats)) 
+                   concat_features = sparse.hstack((test_full[emotion], test_feats)) 
                    test_full[emotion] = concat_features
 
         return train_full, test_full
