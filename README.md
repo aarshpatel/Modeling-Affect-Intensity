@@ -35,3 +35,10 @@ Project Organization
 ```
 python evaluate.py --model model_name --features feature_type --metrics metric1, metric2 --optimize True/False
 ```
+
+
+## Testing out Baseline Model
+
+```
+python evaluate.py --model baseline
+```
