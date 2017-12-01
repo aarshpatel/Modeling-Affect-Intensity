@@ -37,8 +37,21 @@ python evaluate.py --model model_name --features feature_type --metrics metric1,
 ```
 
 
-## Testing out Baseline Model
+## Baseline Model 
+
+We used lexicon features in addition to glove embeddings as features to a SVR model as our baseline model. In order to run the baseline model, run the following command:
 
 ```
 python evaluate.py --model baseline
 ```
+
+Results:
+
+| Emotion  | CV Pearson Correlation Score  |
+| ------------- | ------------- |
+| Anger  | 0.66019879032626883  |
+| Fear  | 0.67025025487576528  |
+| Joy  | 0.68789131129906456  |
+| Sadness  | 0.66106523454135879  |
+| AVG | 0.66985139776061442 |
+
