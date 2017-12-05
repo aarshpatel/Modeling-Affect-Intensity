@@ -10,6 +10,7 @@ def clean_tweet(tweet):
 	""" Simple tweet preprocessing """
 	gettokens = Tokenizer()
 	tweet = " ".join(gettokens.tokenize(tweet))
+	tweet = tweet.lower()
 	# tweet = re.sub(tweet_reg, "", tweet)
 	# tweet = re.sub("\d+", "", tweet)
 	# tweet = tweet.lower().strip()

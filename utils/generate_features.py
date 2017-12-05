@@ -10,11 +10,10 @@ from scipy import sparse
 
 class Featurizer(object):
 
-    def __init__(self, featurizers, train, test):
+    def __init__(self, featurizers, train):
         """ NOTE: you should only combine dense vectors, so don't pass in bow, and tfidf together """
         self.featurizers = featurizers
         self.train = train
-        self.test = test
         self.featurizers_implemented = {
             "lexicons": self.generate_lexical_features,
             "glove": self.generate_glove_embedding_features,
@@ -30,24 +29,21 @@ class Featurizer(object):
         print("Building affect/sentiment lexicon features for data...")
         featurizer = LexiconFeaturizer()
         train_features = {emotion: np.array([featurizer.featurize(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.train.iteritems()}
-        test_features = {emotion: np.array([featurizer.featurize(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.test.iteritems()}
-        return train_features, test_features
+        return train_features
 
     def generate_glove_embedding_features(self):
         """ Generate glove embedding features """
         print("Building Glove Embedding features for data...")
         embedding_featurizer = EmbeddingFeaturizer(glove=True)
         train_features = {emotion: np.array([embedding_featurizer.glove_embeddings_for_tweet(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.train.iteritems()}
-        test_features = {emotion: np.array([embedding_featurizer.glove_embeddings_for_tweet(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.test.iteritems()}
-        return train_features, test_features
+        return train_features
     
     def generate_emoji_embedding_features(self):
         """ Generate emoji embedding features """
         print("Building Emoji Embedding Features for data...")
         embedding_featurizer = EmbeddingFeaturizer(emoji=True) # use emoji embeddings
         train_features = {emotion: np.array([embedding_featurizer.emoji_embeddings_for_tweets(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.train.iteritems()}
-        test_features = {emotion: np.array([embedding_featurizer.emoji_embeddings_for_tweets(tweet.split()) for tweet in tqdm(tweets)]) for emotion, tweets in self.test.iteritems()}
-        return train_features, test_features
+        return train_features
          
     def generate_bow_features(self):
         """ Generate the bow features for the emotion dataset """
@@ -59,8 +55,7 @@ class Featurizer(object):
         vectorizer = CountVectorizer()
         vectorizer.fit(corpus)
         train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
-        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
-        return train_data_bow, test_data_bow
+        return train_data_bow
 
     def generate_ngram_bow_features(self):
         """ Generate ngram features for the emotion dataset """ 
@@ -72,8 +67,7 @@ class Featurizer(object):
         vectorizer = CountVectorizer(ngram_range=(1,3)) # use unigram, bigram and trigram features
         vectorizer.fit(corpus)
         train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
-        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
-        return train_data_bow, test_data_bow 
+        return train_data_bow 
 
     def generate_ngram_tfidf_features(self):
         """ Generate ngram tfidf features for the emotion dataset """
@@ -85,8 +79,7 @@ class Featurizer(object):
         vectorizer = TfidfVectorizer(ngram_range=(1,3)) # use unigram, bigram and trigram features
         vectorizer.fit(corpus)
         train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
-        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
-        return train_data_bow, test_data_bow 
+        return train_data_bow 
 
     def generate_tfidf_features(self):
         """ Generate tfidf features for training and testing data"""
@@ -98,8 +91,7 @@ class Featurizer(object):
         vectorizer = TfidfVectorizer()
         vectorizer.fit(corpus)
         train_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.train.iteritems()}
-        test_data_bow = {emotion: vectorizer.transform(tweets) for emotion, tweets in self.test.iteritems()}
-        return train_data_bow, test_data_bow
+        return train_data_bow
 
     def generate_all_features(self):
         """ 
@@ -109,14 +101,12 @@ class Featurizer(object):
         """
 
         train_full =  {} # contains all combined train features for each emotion
-        test_full = {} # contains all combined test features for each emotion 
 
         for featurizer in self.featurizers:
-            print("featurizer:", featurizer)
-            train_features, test_features = self.featurizers_implemented[featurizer].__call__()
+            
+            print("Generating {0} features...".format(featurizer))
 
-            for emotion, values in train_features.iteritems():
-                print emotion, values.shape
+            train_features = self.featurizers_implemented[featurizer].__call__()
 
             for emotion, train_feats in train_features.iteritems():
                 if emotion not in train_full:
@@ -126,15 +116,7 @@ class Featurizer(object):
                    concat_features = np.hstack((train_full[emotion], train_feats)) 
                    train_full[emotion] = concat_features
 
-            for emotion, test_feats in test_features.iteritems():
-                if emotion not in test_full:
-                    test_full[emotion] = test_feats 
-                else:
-                   # concatentate the matrices
-                   concat_features = np.hstack((test_full[emotion], test_feats)) 
-                   test_full[emotion] = concat_features
-
-        return train_full, test_full
+        return train_full
 
 
 

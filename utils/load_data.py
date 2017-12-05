@@ -14,15 +14,17 @@ def load_data_from_dir(data_loc):
     return data
 
 
-def load_training_testing_data(training_data_loc, testing_data_loc):
+def load_training_data(training_data_loc, dev_data_loc):
     """
     Load all of the training and testing data (which is the dev data in our case)
     """
 
     training_data = load_data_from_dir(training_data_loc)
-    testing_data = load_data_from_dir(testing_data_loc)
-
-    return training_data, testing_data
+    dev_data = load_data_from_dir(dev_data_loc)
+    # combine the training and dev data into one
+    for emotion, tweet_data in dev_data.iteritems():
+        training_data[emotion].extend(tweet_data)
+    return training_data
 
 
 def load_tweets_for_emotion(loc, emotion):

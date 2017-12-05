@@ -1,5 +1,6 @@
 from collections import defaultdict
-
+import shlex, subprocess
+import os
 
 class LexiconFeaturizer(object):
     """ A class that featurizes a tweet affect/sentiment lexicons"""
@@ -21,7 +22,26 @@ class LexiconFeaturizer(object):
         self.negating_word_list = self.get_negating_word_list()
         self.mpqa_subjectivity_lexicon_map = self.get_mpqa_subjectivity_lexicon()
         self.afinn_sentiment_scores_map = self.get_afinn_sentiment_scores()
-        
+        # self.senti_strength_obj = self.get_senti_strength()
+    
+    def get_senti_strength(self):
+        jar_path = "/Users/aarsh/Documents/Modeling-Affect-Intensity/data/lexicons/SentiStrength.jar"
+        dir_path = "/Users/aarsh/Documents/Modeling-Affect-Intensity/data/lexicons/SentiStrength/"
+
+        if 'CLASSPATH' in os.environ:
+            os.environ['CLASSPATH'] += ":" + jar_path
+        else:
+            os.environ['CLASSPATH'] = jar_path
+
+        print (os.environ)
+
+        # Add jar to class path
+        # Create and initialize the SentiStrength class
+        from jnius import autoclass
+
+        self.senti_obj = autoclass('uk.ac.wlv.sentistrength.SentiStrength')()
+        self.senti_obj.initialise(["sentidata", dir_path,"trinary"])
+
     def get_nrc_hashtag_emotion(self):
         nrc_hashtag_emotion_path = "./data/lexicons/NRC-Hashtag-Emotion-Lexicon-v0.2.txt"
         lexicon_map = defaultdict(list)
@@ -42,7 +62,6 @@ class LexiconFeaturizer(object):
             for l in lines[1:]:
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = [float(num) for num in splits[1:]]
-
         return lexicon_map
 
     def get_nrc_hashtag_sentiment_lexicon_unigrams(self):
@@ -84,7 +103,7 @@ class LexiconFeaturizer(object):
                 splits = l.decode('utf-8').split('\t')
                 lexicon_map[splits[0]] = float(splits[1])
         return lexicon_map
-    
+
     def get_senti_wordnet(self):
         senti_wordnet_path = "./data/lexicons/SentiWordNet_3.0.0.txt"
         with open(senti_wordnet_path, 'rb') as f:
@@ -372,6 +391,13 @@ class LexiconFeaturizer(object):
                     negative_score += self.afinn_sentiment_scores_map[token]
         return {"afinn_sentiment_positive_score": positive_score, "afinn_sentiment_negative_score": negative_score}
 
+
+    def get_sentistrength(self, tokens):
+        data = '+'.join(tokens).encode('utf-8').decode("utf-8", "ignore")
+        score = self.senti_obj.computeSentimentScores(data)
+        splits = score.rstrip().split(' ')
+        return {"senti_strength_positive": float(splits[0]), "senti_strength_negative": float(splits[1])}
+
     def featurize(self, tokens):
         """ Build a feature vector for the tokens """
         features = []
@@ -389,6 +415,7 @@ class LexiconFeaturizer(object):
         total_number_of_words_features = self.get_total_number_of_words(tokens)
         mpqa_subjectivity_lexicon_features = self.mpqa_subjectivity_lexicon(tokens)
         afinn_sentiment_features = self.afinn_sentiment_scores(tokens)
+        # senti_strength_features = self.get_sentistrength(" ".join(tokens))
 
         features.extend(nrc_hashtag_emotion_features.values()) # 10 features
         features.extend(nrc_affect_intensity_features.values()) # 10 features
@@ -403,5 +430,6 @@ class LexiconFeaturizer(object):
         features.extend(total_number_of_words_features.values()) # 1 feature
         features.extend(mpqa_subjectivity_lexicon_features.values()) # 2 features
         features.extend(afinn_sentiment_features.values()) # 2 features
+        # features.extend(senti_strength_features.values()) # 2 features
 
         return features

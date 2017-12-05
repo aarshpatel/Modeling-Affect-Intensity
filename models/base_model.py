@@ -5,11 +5,9 @@ class Model(object):
     """ Represents an abstract base class """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, X_train, y_train, X_test, y_test, optimization_parameters={}):
+    def __init__(self, X_train, y_train, optimization_parameters={}):
         self.X_train = X_train
         self.y_train = y_train
-        self.X_test = X_test
-        self.y_test = y_test
         self.optimization_parameters = optimization_parameters
         self.model = None
 
@@ -23,10 +21,6 @@ class Model(object):
 
     @abc.abstractmethod
     def predict(self):
-        pass
-
-    @abc.abstractmethod
-    def evaluate(self, predictions, ground_truth, metric):
         pass
 
     def score(self):

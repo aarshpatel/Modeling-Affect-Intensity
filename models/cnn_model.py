@@ -10,40 +10,46 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import StratifiedKFold, KFold
 
 class Model(base_model.Model):
-    """ 
-    Implementation of AVG Embedding to predict affect intensity scores
+    """
+    Implementation of CNN model that uses glove embeddings as input 
     Take the avg embedding of the tweets and feed that into a feed forward neural network to compute scores
     """
 
     def __init__(self, X_train, y_train, optimization_parameters={}, sklearn_model=None):
         base_model.Model.__init__(self, X_train, y_train, optimization_parameters)
-        self.input_dim = X_train["anger"].shape[1]
 
-    def train(self, optimization_parameters=None):
+    def train(self, metric, optimization_parameters=None):
         """ Train a model that predict affect intenity based on avg embedding of the tweets """
-        pearson_correlation = utils.metrics.pearson_correlation 
-        scoring_metric = utils.metrics.pearson_scorer
+
+        if metric == "rmse":
+            scoring_metric = utils.metrics.rmse_scorer
+        elif metric == "mse":
+            scoring_metric = utils.metrics.mse_scorer
+        elif metric == "pearson_correlation":
+            scoring_metric = utils.metrics.pearson_scorer
 
         input_dim = self.X_train["anger"].shape[1] # just get the dim of the features
-        print("Input shape:", self.input_dim)
 
         self.trained_models = {}
         self.emotion_to_cv_score = {}
 
         for emotion, features in self.X_train.iteritems():
-            print("Training on {0} data".format(emotion))
             n_folds = 5
-            clf = KerasRegressor(build_fn=self._build_keras_model, epochs=30, batch_size=8, verbose=1)
-            kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-            results = cross_val_score(clf, features, self.y_train[emotion], cv=kfold, scoring=scoring_metric)
+
+            model = self._build_keras_model(input_dim)
+            print("Model: ", model)
+            clf = KerasRegressor(build_fn=model, nb_epoch=30, batch_size=8, verbose=1, validation_split=0.2)
+            # kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+            # results = cross_val_score(clf, features, self.y_train[emotion], cv=kfold, scoring=scoring_metric)
             cv_score_avg = results.mean()
             self.emotion_to_cv_score[emotion] = cv_score_avg
+
         return self.emotion_to_cv_score
 
-    def _build_keras_model(self):
+    def _build_keras_model(self, input_dim):
         """ Build the keras model """
         model = Sequential()
-        model.add(Dense(300, input_dim=self.input_dim, kernel_initializer='normal'))
+        model.add(Dense(300, input_dim=input_dim, kernel_initializer='normal'))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))
 
@@ -60,12 +66,11 @@ class Model(base_model.Model):
         model.add(Dropout(0.5))
 
         model.add(Dense(1)) # sigmoid layer (return affect intensity score)
-        model.add(Activation('sigmoid'))
         model.compile(loss='mean_squared_error', optimizer = 'adam') # use the pearson correlation as the loss
         return model
-      
+
     def optimize(self, metric):
-        """ 
+        """
         Optimize the baseline model. We don't want to optimize our baseline model
         @metric: the metric to optimize model
 
@@ -77,7 +82,7 @@ class Model(base_model.Model):
         """ Predict on new test data """
         predictions = {}
         for emotion, features in self.X_test.iteritems():
-            model = self.trained_models[emotion] 
+            model = self.trained_models[emotion]
             emotion_predictions = model.predict(features)
             predictions[emotion] = emotion_predictions
         return predictions
