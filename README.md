@@ -55,3 +55,25 @@ Results:
 | Sadness  | 0.66106523454135879  |
 | AVG | 0.66985139776061442 |
 
+## Best Performing Model
+
+A simple feedforward neural network that uses word2vec embeddings and lexicon features as input into the model. 
+
+Results:
+| Emotion  | CV Pearson Correlation Score  |
+| ------------- | ------------- |
+| Anger  | 0.66019879032626883  |
+| Fear  | 0.67025025487576528  |
+| Joy  | 0.68789131129906456  |
+| Sadness  | 0.66106523454135879  |
+| AVG | 0.66985139776061442 |
+
+
+## Experiments:
+TODO
+
+## Poster
+![Alt text](https://raw.github.com/aarshpatel/Modeling-Affect-Intensity/poster/Affect_Intensity_Poster.png)
+
+
+
