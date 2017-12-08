@@ -73,7 +73,7 @@ Results:
 TODO
 
 ## Poster
-![Alt text](https://raw.github.com/aarshpatel/Modeling-Affect-Intensity/poster/Affect_Intensity_Poster.png)
+![text](https://raw.github.com/aarshpatel/Modeling-Affect-Intensity/master/poster/Affect_Intensity_Poster.png)
 
 
 
